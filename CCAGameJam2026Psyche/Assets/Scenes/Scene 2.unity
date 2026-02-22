@@ -564,6 +564,10 @@ PrefabInstance:
       propertyPath: targetSceneName
       value: Scene 2
       objectReference: {fileID: 0}
+    - target: {fileID: 5910915172954259994, guid: ab74f7cbf391cd94d83f3bde43bec884, type: 3}
+      propertyPath: transitionPrefab
+      value: 
+      objectReference: {fileID: 8522737906055445008, guid: c067cf1693e3c4c2998fa7fd0711ec7a, type: 3}
     - target: {fileID: 6170613008248259705, guid: ab74f7cbf391cd94d83f3bde43bec884, type: 3}
       propertyPath: targetSceneName
       value: Scene 3

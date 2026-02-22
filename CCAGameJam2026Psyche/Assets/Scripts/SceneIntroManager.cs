@@ -77,6 +77,10 @@ public class SceneIntroManager : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
         }
 
+        // Hide the prefab immediately so the last frame doesn't flash
+        if (introInstance != null)
+            introInstance.SetActive(false);
+
         // 4. If the sound is still playing, wait for it to finish
         if (audioSource != null && audioSource.isPlaying)
         {

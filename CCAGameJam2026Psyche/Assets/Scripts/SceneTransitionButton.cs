@@ -124,6 +124,10 @@ public class TransitionRunner : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
         }
 
+        // Hide the prefab immediately so the last frame doesn't flash
+        if (transitionInstance != null)
+            transitionInstance.SetActive(false);
+
         // 6. Play the transition sound
         if (sound != null)
         {
