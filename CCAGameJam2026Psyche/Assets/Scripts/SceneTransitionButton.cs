@@ -26,6 +26,13 @@ public class SceneTransitionButton : MonoBehaviour
     [Range(0f, 1f)]
     public float soundVolume = 1f;
 
+    [Header("Gray-Out Fade")]
+    [Tooltip("Color of the fade overlay.")]
+    public Color fadeColor = Color.gray;
+
+    [Tooltip("How long (seconds) each fade takes.")]
+    public float fadeDuration = 0.5f;
+
     private Button _button;
 
     private void Awake()
@@ -47,72 +54,148 @@ public class SceneTransitionButton : MonoBehaviour
         if (_button != null)
             _button.interactable = false;
 
-        StartCoroutine(TransitionCoroutine());
+        // Run the coroutine on a standalone GameObject so it survives
+        // the Canvas being disabled (disabling this button's parent
+        // would kill any coroutine running on it).
+        GameObject runner = new GameObject("TransitionRunner");
+        DontDestroyOnLoad(runner);
+        TransitionRunner helper = runner.AddComponent<TransitionRunner>();
+        helper.Run(transitionPrefab, targetSceneName, transitionSound, soundVolume, fadeColor, fadeDuration);
+    }
+}
+
+/// <summary>
+/// Lightweight helper that runs the transition coroutine on its own
+/// GameObject so it is never interrupted by UI being disabled.
+/// </summary>
+public class TransitionRunner : MonoBehaviour
+{
+    private Color _fadeColor;
+    private float _fadeDuration;
+
+    public void Run(GameObject prefab, string sceneName, AudioClip sound, float volume,
+                    Color fadeColor, float fadeDuration)
+    {
+        _fadeColor = fadeColor;
+        _fadeDuration = fadeDuration;
+        StartCoroutine(TransitionCoroutine(prefab, sceneName, sound, volume));
     }
 
-    private IEnumerator TransitionCoroutine()
+    private IEnumerator TransitionCoroutine(GameObject prefab, string sceneName, AudioClip sound, float volume)
     {
-        // 1. Hide all Canvas UI in the scene
+        // 1. Create an overlay and fade to gray (covers the UI)
+        Image overlay = CreateFadeOverlay();
+        yield return StartCoroutine(Fade(overlay, 0f, 1f, _fadeDuration));
+
+        // 2. Hide all Canvas UI in the scene (except our overlay)
+        Canvas overlayCanvas = overlay.canvas;
         Canvas[] allCanvases = FindObjectsOfType<Canvas>();
         foreach (Canvas canvas in allCanvases)
         {
-            canvas.gameObject.SetActive(false);
+            if (canvas != overlayCanvas)
+                canvas.gameObject.SetActive(false);
         }
 
-        // 2. Instantiate the transition prefab
+        // 3. Instantiate the transition prefab behind the overlay
         GameObject transitionInstance = null;
         Animator animator = null;
 
-        if (transitionPrefab != null)
+        if (prefab != null)
         {
-            transitionInstance = Instantiate(transitionPrefab);
+            transitionInstance = Instantiate(prefab);
             animator = transitionInstance.GetComponent<Animator>();
         }
 
-        // 3. Wait for the Animator to finish playing its default state
+        // 4. Fade gray out to reveal the transition prefab
+        yield return StartCoroutine(Fade(overlay, 1f, 0f, _fadeDuration));
+
+        // 5. Wait for the Animator to finish playing its default state
         if (animator != null)
         {
-            // Wait one frame for the Animator to initialize
             yield return null;
 
-            // Get the current clip length from the Animator
             AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
             float animationLength = stateInfo.length;
 
-            // Wait for the animation to complete
             yield return new WaitForSeconds(animationLength);
         }
         else
         {
-            // No animator — just wait a brief moment
             yield return new WaitForSeconds(0.5f);
         }
 
-        // 4. Play the transition sound
-        if (transitionSound != null)
+        // 6. Play the transition sound
+        if (sound != null)
         {
-            // Create a temporary AudioSource so it plays independently
-            GameObject audioObj = new GameObject("TransitionAudio");
-            DontDestroyOnLoad(audioObj);
-            AudioSource audioSource = audioObj.AddComponent<AudioSource>();
-            audioSource.clip = transitionSound;
-            audioSource.volume = soundVolume;
+            AudioSource audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.clip = sound;
+            audioSource.volume = volume;
             audioSource.Play();
 
-            // Wait for the sound to finish before loading the scene
-            yield return new WaitForSeconds(transitionSound.length);
-
-            Destroy(audioObj);
+            yield return new WaitForSeconds(sound.length);
         }
 
-        // 5. Load the target scene
-        if (!string.IsNullOrEmpty(targetSceneName))
+        // 7. Fade to gray before loading the next scene
+        yield return StartCoroutine(Fade(overlay, 0f, 1f, _fadeDuration));
+
+        // 8. Load the target scene
+        if (!string.IsNullOrEmpty(sceneName))
         {
-            SceneManager.LoadScene(targetSceneName);
+            SceneManager.LoadScene(sceneName);
         }
         else
         {
             Debug.LogWarning("SceneTransitionButton: No target scene name specified.");
         }
+
+        // Clean up
+        Destroy(overlayCanvas.gameObject);
+        Destroy(gameObject);
+    }
+
+    // ───── Fade helpers ─────
+
+    private Image CreateFadeOverlay()
+    {
+        GameObject canvasObj = new GameObject("FadeCanvas");
+        DontDestroyOnLoad(canvasObj);
+        Canvas canvas = canvasObj.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 9999;
+        canvasObj.AddComponent<CanvasScaler>();
+        canvasObj.AddComponent<GraphicRaycaster>();
+
+        GameObject imgObj = new GameObject("FadeImage");
+        imgObj.transform.SetParent(canvasObj.transform, false);
+
+        Image image = imgObj.AddComponent<Image>();
+        image.color = new Color(_fadeColor.r, _fadeColor.g, _fadeColor.b, 0f);
+        image.raycastTarget = true;
+
+        RectTransform rt = image.rectTransform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        return image;
+    }
+
+    private IEnumerator Fade(Image overlay, float fromAlpha, float toAlpha, float duration)
+    {
+        float elapsed = 0f;
+        Color c = overlay.color;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            c.a = Mathf.Lerp(fromAlpha, toAlpha, t);
+            overlay.color = c;
+            yield return null;
+        }
+
+        c.a = toAlpha;
+        overlay.color = c;
     }
 }
