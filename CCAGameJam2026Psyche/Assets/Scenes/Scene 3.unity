@@ -603,6 +603,10 @@ PrefabInstance:
       propertyPath: targetSceneName
       value: Scene 3
       objectReference: {fileID: 0}
+    - target: {fileID: 3740160193954285397, guid: ab74f7cbf391cd94d83f3bde43bec884, type: 3}
+      propertyPath: transitionPrefab
+      value: 
+      objectReference: {fileID: 1373709176731392543, guid: ccea294ee25334184863d9d97105bd50, type: 3}
     - target: {fileID: 4207491269187902506, guid: ab74f7cbf391cd94d83f3bde43bec884, type: 3}
       propertyPath: m_Name
       value: Canvas
@@ -691,6 +695,10 @@ PrefabInstance:
       propertyPath: targetSceneName
       value: Scene 3
       objectReference: {fileID: 0}
+    - target: {fileID: 5910915172954259994, guid: ab74f7cbf391cd94d83f3bde43bec884, type: 3}
+      propertyPath: transitionPrefab
+      value: 
+      objectReference: {fileID: 5157653534399337787, guid: a9b9a8d9166834970a503018030fc0e4, type: 3}
     - target: {fileID: 6170613008248259705, guid: ab74f7cbf391cd94d83f3bde43bec884, type: 3}
       propertyPath: targetSceneName
       value: End Scene

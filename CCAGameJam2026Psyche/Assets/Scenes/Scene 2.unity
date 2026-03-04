@@ -476,6 +476,10 @@ PrefabInstance:
       propertyPath: targetSceneName
       value: Scene 2
       objectReference: {fileID: 0}
+    - target: {fileID: 3740160193954285397, guid: ab74f7cbf391cd94d83f3bde43bec884, type: 3}
+      propertyPath: transitionPrefab
+      value: 
+      objectReference: {fileID: 4920611806776735594, guid: cf0a2c06e7bf8401cbdd859b0eedd94f, type: 3}
     - target: {fileID: 4207491269187902506, guid: ab74f7cbf391cd94d83f3bde43bec884, type: 3}
       propertyPath: m_Name
       value: Canvas
